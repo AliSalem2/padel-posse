@@ -446,6 +446,14 @@
 
 <script>
 // ═══════════════════════════════════════════════════
+//  ✏️  PASTE YOUR DETAILS HERE ONCE, THEN RE-UPLOAD
+// ═══════════════════════════════════════════════════
+const HARDCODED_CFG = {
+  groupName: 'Padel Crew Berlin Cal 1.0',          // 👈 your group name
+  apiKey:    '$2a$10$8u2fTCYAdWZvSh6TL8V42Ox/Q9Evagy3lReOjpV.E1KcbJJjYvmuW', // 👈 paste your JSONBin Secret Key
+  binId:     '69f5e19d856a68218999d28a',     // 👈 paste your Bin ID
+};
+// ═══════════════════════════════════════════════════
 //  CONSTANTS
 // ═══════════════════════════════════════════════════
 const SLOT_META = {
@@ -481,8 +489,14 @@ const S = {
 //  INIT
 // ═══════════════════════════════════════════════════
 function init() {
-  // Load saved config
+  // Use hardcoded config if localStorage has nothing (i.e. any friend's fresh browser)
   try { S.cfg = JSON.parse(localStorage.getItem('padelCfg') || 'null'); } catch(e) {}
+  if (!S.cfg?.apiKey || S.cfg.apiKey === 'YOUR_SECRET_KEY_HERE') {
+    // Fall back to the credentials baked into the file
+    if (HARDCODED_CFG.apiKey !== 'YOUR_SECRET_KEY_HERE') {
+      S.cfg = HARDCODED_CFG;
+    }
+  }
 
   // Load saved name
   const savedName = localStorage.getItem('padelUser') || '';
@@ -500,13 +514,13 @@ function init() {
   inp.addEventListener('blur',   onNameBlur);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
 
-  // Update group label if configured
+  // Update group label
   if (S.cfg?.groupName) {
     document.getElementById('group-name').textContent = S.cfg.groupName;
     document.title = S.cfg.groupName + ' 🏓';
   }
 
-  // Show setup or load data
+  // Show setup only if credentials are still missing (file not yet configured)
   if (!S.cfg?.apiKey || !S.cfg?.binId) {
     showSetup();
   } else {
