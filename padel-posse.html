@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Padel Posse 🏓</title>
+  <style>
+    :root {
+      --g900: #14532d; --g800: #166534; --g700: #15803d;
+      --g600: #16a34a; --g500: #22c55e; --g200: #bbf7d0;
+      --g100: #dcfce7; --g50:  #f0fdf4;
+      --y500: #eab308; --y100: #fef9c3;
+      --r500: #ef4444;
+      --gray900: #111827; --gray700: #374151; --gray600: #4b5563;
+      --gray400: #9ca3af; --gray200: #e5e7eb; --gray100: #f3f4f6;
+      --white: #ffffff;
+      --rLg: 14px; --rMd: 10px; --rSm: 7px;
+      --shadow: 0 2px 8px rgba(0,0,0,.08);
+      --shadowMd: 0 6px 18px rgba(0,0,0,.13);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--g50);
+      color: var(--gray900);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ────────────────────────────────────── */
+    .app-header {
+      background: linear-gradient(135deg,#0c3320 0%,#1a5c2e 55%,#15803d 100%);
+      color: #fff;
+      padding: 18px 20px 22px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.28);
+    }
+    .header-icon   { font-size: 2.6rem; line-height: 1; margin-bottom: 4px; }
+    .header-title  { font-size: clamp(1.5rem,5vw,2.1rem); font-weight: 900;
+                     letter-spacing: -.5px; text-transform: uppercase; }
+    .header-tag    { font-size: .78rem; opacity: .7; margin-top: 3px; font-style: italic; }
+
+    /* ── NAME BAR ──────────────────────────────────── */
+    .name-bar {
+      background: var(--white);
+      border-bottom: 2px solid var(--g200);
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--g600);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 800;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      transition: background .2s;
+    }
+    .name-prompt { font-size: .78rem; color: var(--gray600); white-space: nowrap; }
+    #playerName {
+      flex: 1; min-width: 0; max-width: 200px;
+      border: 1.5px solid var(--gray200);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: .9rem;
+      outline: none;
+      transition: all .2s;
+    }
+    #playerName:focus { border-color: var(--g600); }
+    #playerName.set   { border-color: var(--g600); background: var(--g100); font-weight: 600; }
+    .gear-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.05rem; padding: 4px 6px;
+      opacity: .55; transition: opacity .15s, transform .2s;
+      border-radius: 6px;
+    }
+    .gear-btn:hover { opacity: 1; transform: rotate(45deg); }
+
+    /* ── WEEK NAV ──────────────────────────────────── */
+    .week-nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--g100);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .nav-btn {
+      background: transparent;
+      border: 1.5px solid var(--g600);
+      color: var(--g700);
+      border-radius: 20px;
+      padding: 5px 14px;
+      cursor: pointer;
+      font-size: .78rem; font-weight: 700;
+      transition: all .15s;
+    }
+    .nav-btn:hover   { background: var(--g600); color: #fff; }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .week-title {
+      font-size: .88rem; font-weight: 800;
+      color: var(--g900);
+      min-width: 160px; text-align: center;
+    }
+    .refresh-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: .95rem; padding: 4px 8px;
+      opacity: .55; transition: opacity .15s, transform .4s;
+      border-radius: 6px;
+    }
+    .refresh-btn:hover { opacity: 1; transform: rotate(180deg); }
+
+    /* ── DAYS GRID ─────────────────────────────────── */
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: 11px;
+      padding: 14px 14px 84px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (min-width: 1020px) { .days-grid { grid-template-columns: repeat(7,1fr); } }
+    @media (max-width: 480px)  { .days-grid { grid-template-columns: repeat(2,1fr); gap:8px; padding:10px 10px 80px; } }
+
+    /* ── DAY CARD ──────────────────────────────────── */
+    .day-card {
+      background: var(--white);
+      border-radius: var(--rLg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: box-shadow .15s, transform .1s;
+    }
+    .day-card:hover { box-shadow: var(--shadowMd); }
+    .day-card.is-past { opacity: .5; }
+
+    .day-head {
+      background: var(--g900);
+      color: #fff;
+      padding: 9px 10px;
+      text-align: center;
+    }
+    .day-card.is-today .day-head {
+      background: linear-gradient(135deg, var(--g700), var(--g500));
+    }
+    .day-card.is-today .day-head::after { content: ' 📍'; font-size: .65rem; }
+
+    .dow-label  { font-size: .6rem; letter-spacing: 1.4px; text-transform: uppercase; opacity: .75; }
+    .day-num    { font-size: 1.55rem; font-weight: 900; line-height: 1.1; }
+    .mon-label  { font-size: .62rem; opacity: .6; margin-top: 1px; }
+
+    .day-slots { padding: 7px; display: flex; flex-direction: column; gap: 6px; }
+
+    /* ── SLOT BUTTON ───────────────────────────────── */
+    .slot-btn {
+      width: 100%;
+      border: 1.5px solid var(--gray200);
+      background: var(--gray100);
+      border-radius: var(--rSm);
+      padding: 7px 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all .15s;
+    }
+    .slot-btn:hover:not(.past):not([disabled]) {
+      border-color: var(--g600);
+      background: var(--g50);
+      transform: scale(1.015);
+    }
+    .slot-btn.past { cursor: default; }
+    .slot-btn.mine {
+      border-color: var(--g500);
+      background: var(--g100);
+    }
+    .slot-btn.mine:hover:not(.past) { background: var(--g200); }
+
+    .slot-top {
+      display: flex; align-items: center; gap: 4px;
+      margin-bottom: 2px;
+    }
+    .slot-ico  { font-size: .78rem; }
+    .slot-name {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .4px;
+      color: var(--gray600);
+    }
+    .slot-btn.mine .slot-name { color: var(--g800); }
+    .slot-time { font-size: .6rem; color: var(--gray400); display: block; margin-bottom: 4px; }
+
+    .slot-chips { display: flex; flex-wrap: wrap; gap: 3px; min-height: 18px; }
+    .chip {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: .58rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      text-transform: uppercase;
+      cursor: default;
+      position: relative;
+    }
+    /* Tooltip on hover (desktop) */
+    .chip::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: 115%; left: 50%;
+      transform: translateX(-50%);
+      background: var(--gray900);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: .65rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      z-index: 20;
+    }
+    .chip:hover::after { opacity: 1; }
+    .empty-slot { font-size: .65rem; color: var(--gray400); }
+    .count-label { font-size: .68rem; color: var(--g600); font-weight: 700; }
+
+    /* ── STATUS BAR ────────────────────────────────── */
+    .status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white);
+      border-top: 2px solid var(--g200);
+      padding: 9px 18px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 100;
+      box-shadow: 0 -4px 14px rgba(0,0,0,.08);
+    }
+    .status-msg { font-size: .78rem; color: var(--gray400); flex: 1; }
+    .status-msg.saving { color: var(--y500); }
+    .status-msg.saved  { color: var(--g600); }
+    .status-msg.error  { color: var(--r500); }
+    .player-badge {
+      background: var(--g100);
+      color: var(--g800);
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: .72rem; font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ── TOAST ─────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      top: 68px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--gray900); color: #fff;
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: .82rem; font-weight: 600;
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── LOADING ───────────────────────────────────── */
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 50px 20px;
+      color: var(--g600); font-size: .9rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { display: inline-block; animation: spin 1s linear infinite; }
+
+    /* ── SETUP MODAL ───────────────────────────────── */
+    .backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 20px;
+      padding: 26px;
+      max-width: 450px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    }
+    .modal-ico   { font-size: 2.4rem; text-align: center; margin-bottom: 8px; }
+    .modal-h     { font-size: 1.35rem; font-weight: 900; text-align: center; color: var(--g900); }
+    .modal-sub   { font-size: .82rem; color: var(--gray600); text-align: center; margin: 5px 0 20px; }
+
+    .setup-step {
+      background: var(--g50);
+      border: 1px solid var(--g200);
+      border-radius: var(--rMd);
+      padding: 13px;
+      margin-bottom: 10px;
+    }
+    .step-hdr  { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+    .step-num  {
+      background: var(--g600); color: #fff;
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: .72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-title { font-size: .83rem; font-weight: 700; }
+    .step-body  { font-size: .78rem; color: var(--gray600); line-height: 1.45; margin-left: 30px; }
+    .step-body a { color: var(--g700); font-weight: 600; }
+    .step-body code {
+      background: var(--gray100); border-radius: 4px;
+      padding: 1px 5px; font-family: monospace; font-size: .78rem;
+    }
+
+    .form-lbl   { display: block; font-size: .8rem; font-weight: 700; margin-bottom: 4px; }
+    .form-group { margin-bottom: 12px; }
+    .form-inp {
+      width: 100%;
+      border: 1.5px solid var(--gray200);
+      border-radius: var(--rSm);
+      padding: 8px 12px;
+      font-size: .88rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .form-inp.mono { font-family: 'Courier New', monospace; font-size: .8rem; }
+    .form-inp:focus { border-color: var(--g600); }
+
+    .btn-go {
+      background: linear-gradient(135deg, var(--g800), var(--g600));
+      color: #fff; border: none;
+      border-radius: var(--rMd);
+      padding: 13px 20px;
+      font-size: .92rem; font-weight: 800;
+      cursor: pointer; width: 100%;
+      margin-top: 8px;
+      text-transform: uppercase; letter-spacing: .5px;
+      transition: opacity .15s;
+    }
+    .btn-go:hover { opacity: .9; }
+
+    .setup-err {
+      background: #fee2e2; color: var(--r500);
+      border-radius: var(--rSm);
+      padding: 9px 13px;
+      font-size: .8rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── UTIL ──────────────────────────────────────── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ════════ SETUP MODAL ════════ -->
+<div id="backdrop" class="backdrop hidden">
+  <div class="modal">
+    <div class="modal-ico">🏓</div>
+    <div class="modal-h">Set up your court</div>
+    <div class="modal-sub">Takes 2 minutes. You only do this once&nbsp;🎾</div>
+
+    <div class="setup-step">
+      <div class="step-hdr">
+        <div class="step-num">1</div>
+        <div class="step-title">Get a free JSONBin account</div>
+      </div>
+      <div class="step-body">
+        Go to <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a> → Sign up →
+        Click <strong>API Keys</strong> in the left menu → copy your <strong>Secret Key</strong>.
+      </div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-hdr">
+        <div class="step-num">2</div>
+        <div class="step-title">Create a new Bin</div>
+      </div>
+      <div class="step-body">
+        Click <strong>Bins → Create Bin</strong> → paste <code>{"availability":{}}</code>
+        → click <strong>Save</strong> → copy the <strong>Bin ID</strong>
+        (the string after the last <code>/</code> in the URL).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-lbl" for="s-group">🏟️ Your group name</label>
+      <input id="s-group" class="form-inp" type="text" placeholder="e.g. Padel Posse" maxlength="30" />
+    </div>
+    <div class="form-group">
+      <label class="form-lbl" for="s-key">🔑 Secret API Key</label>
+      <input id="s-key" class="form-inp mono" type="password" placeholder="$2b$10$…" />
+    </div>
+    <div class="form-group">
+      <label class="form-lbl" for="s-bin">📦 Bin ID</label>
+      <input id="s-bin" class="form-inp mono" type="text" placeholder="67f3a8c…" />
+    </div>
+
+    <button class="btn-go" onclick="submitSetup()">🚀 Let's Play!</button>
+    <div class="setup-err" id="setup-err"></div>
+  </div>
+</div>
+
+<!-- ════════ TOAST ════════ -->
+<div id="toast" class="toast">👆 Enter your name first, champ!</div>
+
+<!-- ════════ APP ════════ -->
+<header class="app-header">
+  <div class="header-icon">🏓</div>
+  <h1 class="header-title" id="group-name">Padel Posse</h1>
+  <div class="header-tag">Stop the group chat chaos — pick your slots!</div>
+</header>
+
+<div class="name-bar">
+  <div class="user-avatar" id="avatar">?</div>
+  <span class="name-prompt">Who are you?</span>
+  <input id="playerName" type="text" placeholder="Your first name…" maxlength="20" autocomplete="off" />
+  <button class="gear-btn" onclick="showSetup()" title="Settings">⚙️</button>
+</div>
+
+<div class="week-nav">
+  <button id="btn-prev" class="nav-btn" onclick="changeWeek(-1)">← Prev</button>
+  <div class="week-title" id="week-lbl">…</div>
+  <button class="nav-btn" onclick="changeWeek(1)">Next →</button>
+  <button class="refresh-btn" onclick="fetchData(true)" title="Refresh">🔄</button>
+</div>
+
+<div id="grid-area">
+  <div class="loading"><span class="spin">⚙️</span> Loading the court…</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-msg" id="status-msg">Ready to smash! 🏓</div>
+  <div class="player-badge" id="player-badge">0 players</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════
+const SLOT_META = {
+  morning:   { ico: '🌅', name: 'Morning',   time: '8:00 – 12:00' },
+  afternoon: { ico: '☀️',  name: 'Afternoon', time: '13:00 – 18:00' },
+  evening:   { ico: '🌆', name: 'Evening',   time: '18:00 – 22:00' },
+};
+
+const AVATAR_COLORS = [
+  '#16a34a','#2563eb','#dc2626','#d97706',
+  '#7c3aed','#0891b2','#be185d','#0d9488',
+  '#ea580c','#4338ca','#65a30d','#b45309',
+];
+
+const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+const S = {
+  cfg: null,          // { groupName, apiKey, binId }
+  user: '',           // current player's name
+  data: { availability: {} },
+  weekOffset: 0,
+  saveTimer: null,
+  saving: false,
+};
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+function init() {
+  // Load saved config
+  try { S.cfg = JSON.parse(localStorage.getItem('padelCfg') || 'null'); } catch(e) {}
+
+  // Load saved name
+  const savedName = localStorage.getItem('padelUser') || '';
+  if (savedName) {
+    S.user = savedName;
+    const inp = document.getElementById('playerName');
+    inp.value = savedName;
+    inp.classList.add('set');
+    renderAvatar(savedName);
+  }
+
+  // Wire name input
+  const inp = document.getElementById('playerName');
+  inp.addEventListener('input',  onNameInput);
+  inp.addEventListener('blur',   onNameBlur);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+
+  // Update group label if configured
+  if (S.cfg?.groupName) {
+    document.getElementById('group-name').textContent = S.cfg.groupName;
+    document.title = S.cfg.groupName + ' 🏓';
+  }
+
+  // Show setup or load data
+  if (!S.cfg?.apiKey || !S.cfg?.binId) {
+    showSetup();
+  } else {
+    fetchData(false);
+  }
+
+  // Auto-refresh every 60 s
+  setInterval(() => { if (!S.saving && S.cfg) fetchData(false); }, 60_000);
+}
+
+// ═══════════════════════════════════════════════════
+//  NAME HANDLING
+// ═══════════════════════════════════════════════════
+function onNameInput(e) {
+  const n = e.target.value.trim();
+  renderAvatar(n);
+  e.target.classList.toggle('set', n.length > 0);
+}
+
+function onNameBlur(e) {
+  const n = e.target.value.trim();
+  if (n && n !== S.user) {
+    S.user = n;
+    localStorage.setItem('padelUser', n);
+    renderGrid();
+    updateBadge();
+  }
+}
+
+function renderAvatar(name) {
+  const el = document.getElementById('avatar');
+  if (!name) { el.style.background = '#9ca3af'; el.textContent = '?'; return; }
+  el.style.background = avatarColor(name);
+  el.textContent = name.charAt(0).toUpperCase();
+}
+
+function avatarColor(name) {
+  if (!name) return '#9ca3af';
+  let h = 0;
+  for (const c of name.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h)];
+}
+
+// ═══════════════════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════════════════
+function showSetup() {
+  const bd = document.getElementById('backdrop');
+  bd.classList.remove('hidden');
+  if (S.cfg) {
+    document.getElementById('s-group').value = S.cfg.groupName || '';
+    document.getElementById('s-key').value   = S.cfg.apiKey   || '';
+    document.getElementById('s-bin').value   = S.cfg.binId    || '';
+  }
+}
+
+function hideSetup() {
+  document.getElementById('backdrop').classList.add('hidden');
+}
+
+async function submitSetup() {
+  const groupName = document.getElementById('s-group').value.trim() || 'Padel Posse';
+  const apiKey    = document.getElementById('s-key').value.trim();
+  const binId     = document.getElementById('s-bin').value.trim();
+  const errEl     = document.getElementById('setup-err');
+  errEl.style.display = 'none';
+
+  if (!apiKey || !binId) {
+    showErr('⚠️ Please fill in both the API Key and Bin ID.');
+    return;
+  }
+
+  // Test connection
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': apiKey },
+    });
+    if (!res.ok) {
+      showErr(`❌ Connection failed (${res.status}). Check your API key and Bin ID.`);
+      return;
+    }
+    const json = await res.json();
+    S.data = validData(json.record);
+  } catch {
+    showErr('❌ Could not reach JSONBin. Check your internet connection.');
+    return;
+  }
+
+  S.cfg = { groupName, apiKey, binId };
+  localStorage.setItem('padelCfg', JSON.stringify(S.cfg));
+  document.getElementById('group-name').textContent = groupName;
+  document.title = groupName + ' 🏓';
+  hideSetup();
+  renderGrid();
+  updateBadge();
+  setStatus('saved', '🏓 Court is open!');
+
+  function showErr(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
+}
+
+// ═══════════════════════════════════════════════════
+//  DATE HELPERS
+// ═══════════════════════════════════════════════════
+function monday(offset) {
+  const now = new Date();
+  const dow = now.getDay();
+  const d   = new Date(now);
+  d.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function weekDays(offset) {
+  const m = monday(offset);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(m);
+    d.setDate(m.getDate() + i);
+    return d;
+  });
+}
+
+function dStr(d) { return d.toISOString().split('T')[0]; }
+
+function isToday(d) {
+  const n = new Date(); n.setHours(0,0,0,0);
+  const t = new Date(d); t.setHours(0,0,0,0);
+  return t.getTime() === n.getTime();
+}
+
+function isPast(d) {
+  const n = new Date(); n.setHours(0,0,0,0);
+  const t = new Date(d); t.setHours(0,0,0,0);
+  return t < n;
+}
+
+function slotsFor(d) {
+  const dow = d.getDay();
+  return (dow === 0 || dow === 6) ? ['morning','afternoon'] : ['morning','evening'];
+}
+
+// ═══════════════════════════════════════════════════
+//  DATA — FETCH & SAVE
+// ═══════════════════════════════════════════════════
+function validData(record) {
+  if (record && typeof record.availability === 'object') return record;
+  return { availability: {} };
+}
+
+async function fetchData(showIndicator) {
+  if (!S.cfg) return;
+  if (showIndicator) setStatus('saving', '🔄 Refreshing…');
+  try {
+    const res  = await fetch(`https://api.jsonbin.io/v3/b/${S.cfg.binId}/latest`,
+      { headers: { 'X-Master-Key': S.cfg.apiKey } });
+    if (!res.ok) throw new Error(res.status);
+    S.data = validData((await res.json()).record);
+    renderGrid();
+    updateBadge();
+    if (showIndicator) setStatus('saved', '✅ Up to date!');
+  } catch (e) {
+    if (showIndicator) setStatus('error', `❌ Refresh failed — check your connection.`);
+  }
+}
+
+function scheduleSave() {
+  if (S.saveTimer) clearTimeout(S.saveTimer);
+  S.saveTimer = setTimeout(saveData, 900);
+}
+
+async function saveData() {
+  if (!S.cfg || !S.user) return;
+  S.saving = true;
+  setStatus('saving', '💾 Saving your picks…');
+  try {
+    // Fetch latest, apply our local state on top
+    let base = S.data;
+    try {
+      const r = await fetch(`https://api.jsonbin.io/v3/b/${S.cfg.binId}/latest`,
+        { headers: { 'X-Master-Key': S.cfg.apiKey } });
+      if (r.ok) base = validData((await r.json()).record);
+    } catch {}
+
+    // Merge: keep server state, overwrite slots that belong to current user in local state
+    const merged = deepClone(base);
+    for (const [dk, slots] of Object.entries(S.data.availability || {})) {
+      for (const [sk, players] of Object.entries(slots)) {
+        if (!merged.availability[dk]) merged.availability[dk] = {};
+        // Replace this slot's value (our local state is source of truth for all players in view)
+        merged.availability[dk][sk] = players;
+      }
+    }
+
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${S.cfg.binId}`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': S.cfg.apiKey },
+      body:    JSON.stringify(merged),
+    });
+    if (!res.ok) throw new Error(res.status);
+    S.data = merged;
+    renderGrid();
+    updateBadge();
+    setStatus('saved', '✅ Saved! See you on court 🎾');
+  } catch {
+    setStatus('error', '❌ Save failed — try refreshing.');
+  } finally {
+    S.saving = false;
+  }
+}
+
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+// ═══════════════════════════════════════════════════
+//  TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleSlot(dk, sk) {
+  if (!S.user) { showToast(); document.getElementById('playerName').focus(); return; }
+  const av = S.data.availability;
+  if (!av[dk])     av[dk]     = {};
+  if (!av[dk][sk]) av[dk][sk] = [];
+  const arr = av[dk][sk];
+  const idx = arr.indexOf(S.user);
+  if (idx === -1) arr.push(S.user); else arr.splice(idx, 1);
+  renderGrid();
+  updateBadge();
+  scheduleSave();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════
+function renderGrid() {
+  if (!S.cfg) return;
+  const days = weekDays(S.weekOffset);
+
+  // Week label
+  const s = days[0], e = days[6];
+  document.getElementById('week-lbl').textContent =
+    s.getMonth() === e.getMonth()
+      ? `${MONTHS[s.getMonth()]} ${s.getDate()}–${e.getDate()}, ${s.getFullYear()}`
+      : `${MONTHS[s.getMonth()]} ${s.getDate()} – ${MONTHS[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`;
+
+  // Disable prev-week btn when already at current week
+  document.getElementById('btn-prev').disabled = S.weekOffset <= 0;
+
+  const grid = document.createElement('div');
+  grid.className = 'days-grid';
+
+  days.forEach(day => {
+    const dk    = dStr(day);
+    const past  = isPast(day);
+    const today = isToday(day);
+    const slots = slotsFor(day);
+
+    const card  = document.createElement('div');
+    card.className = 'day-card' + (today ? ' is-today' : '') + (past ? ' is-past' : '');
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'day-head';
+    head.innerHTML = `
+      <div class="dow-label">${DAYS[day.getDay()]}</div>
+      <div class="day-num">${day.getDate()}</div>
+      <div class="mon-label">${MONTHS[day.getMonth()]}</div>
+    `;
+    card.appendChild(head);
+
+    // Slots
+    const slotsWrap = document.createElement('div');
+    slotsWrap.className = 'day-slots';
+
+    slots.forEach(sk => {
+      const meta    = SLOT_META[sk];
+      const players = S.data.availability?.[dk]?.[sk] || [];
+      const mine    = S.user && players.includes(S.user);
+
+      const btn = document.createElement('button');
+      btn.className = 'slot-btn' + (mine ? ' mine' : '') + (past ? ' past' : '');
+      if (past) btn.setAttribute('disabled', '');
+      else btn.addEventListener('click', () => toggleSlot(dk, sk));
+
+      // Chips
+      const chips = players.map(p => {
+        const color = avatarColor(p);
+        return `<div class="chip" style="background:${color}" data-name="${p}">${p.charAt(0).toUpperCase()}</div>`;
+      }).join('');
+
+      btn.innerHTML = `
+        <div class="slot-top">
+          <span class="slot-ico">${meta.ico}</span>
+          <span class="slot-name">${meta.name}</span>
+        </div>
+        <span class="slot-time">${meta.time}</span>
+        <div class="slot-chips">
+          ${players.length
+            ? `${chips}<span class="count-label" style="margin-left:2px;line-height:22px">${players.length} ready</span>`
+            : `<span class="empty-slot">No one yet</span>`}
+        </div>
+      `;
+      slotsWrap.appendChild(btn);
+    });
+
+    card.appendChild(slotsWrap);
+    grid.appendChild(card);
+  });
+
+  document.getElementById('grid-area').replaceChildren(grid);
+}
+
+function updateBadge() {
+  const all = new Set();
+  for (const slots of Object.values(S.data.availability || {}))
+    for (const pls of Object.values(slots)) pls.forEach(p => all.add(p));
+  const n = all.size;
+  document.getElementById('player-badge').textContent =
+    n === 0 ? 'Be the first! 🎾' : n === 1 ? '1 player' : `${n} players`;
+}
+
+// ═══════════════════════════════════════════════════
+//  WEEK NAVIGATION
+// ═══════════════════════════════════════════════════
+function changeWeek(d) {
+  const next = S.weekOffset + d;
+  if (next < 0) return;
+  S.weekOffset = next;
+  renderGrid();
+}
+
+// ═══════════════════════════════════════════════════
+//  STATUS & TOAST
+// ═══════════════════════════════════════════════════
+let _statusTimer = null;
+function setStatus(type, msg) {
+  const el = document.getElementById('status-msg');
+  el.className = 'status-msg ' + type;
+  el.textContent = msg;
+  if (_statusTimer) clearTimeout(_statusTimer);
+  if (type === 'saved') {
+    _statusTimer = setTimeout(() => {
+      el.className = 'status-msg';
+      el.textContent = 'Ready to smash! 🏓';
+    }, 3500);
+  }
+}
+
+let _toastTimer = null;
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
