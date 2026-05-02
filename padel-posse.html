@@ -449,9 +449,11 @@
 //  CONSTANTS
 // ═══════════════════════════════════════════════════
 const SLOT_META = {
-  morning:   { ico: '🌅', name: 'Morning',   time: '8:00 – 12:00' },
-  afternoon: { ico: '☀️',  name: 'Afternoon', time: '13:00 – 18:00' },
-  evening:   { ico: '🌆', name: 'Evening',   time: '18:00 – 22:00' },
+  s0810: { ico: '🌅', name: '8–10',   time: '8:00 – 10:00' },
+  s1012: { ico: '🌤️', name: '10–12',  time: '10:00 – 12:00' },
+  s1618: { ico: '☀️',  name: '16–18',  time: '16:00 – 18:00' },
+  s1820: { ico: '🌆', name: '18–20',  time: '18:00 – 20:00' },
+  s2022: { ico: '🌙', name: '20–22',  time: '20:00 – 22:00' },
 };
 
 const AVATAR_COLORS = [
@@ -641,8 +643,7 @@ function isPast(d) {
 }
 
 function slotsFor(d) {
-  const dow = d.getDay();
-  return (dow === 0 || dow === 6) ? ['morning','afternoon'] : ['morning','evening'];
+  return ['s0810','s1012','s1618','s1820','s2022'];
 }
 
 // ═══════════════════════════════════════════════════
