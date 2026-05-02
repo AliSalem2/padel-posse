@@ -510,7 +510,14 @@ function init() {
   if (!S.cfg?.apiKey || !S.cfg?.binId) {
     showSetup();
   } else {
-    fetchData(false);
+    // Load from cache instantly, then quietly sync from server in background
+    const cached = localStorage.getItem('padelData');
+    if (cached) {
+      try { S.data = JSON.parse(cached); } catch {}
+    }
+    renderGrid();
+    updateBadge();
+    fetchData(false); // background sync, no spinner
   }
 
   // Auto-refresh every 60 s
@@ -662,6 +669,7 @@ async function fetchData(showIndicator) {
       { headers: { 'X-Master-Key': S.cfg.apiKey } });
     if (!res.ok) throw new Error(res.status);
     S.data = validData((await res.json()).record);
+    localStorage.setItem('padelData', JSON.stringify(S.data));
     renderGrid();
     updateBadge();
     if (showIndicator) setStatus('saved', '✅ Up to date!');
@@ -678,35 +686,15 @@ function scheduleSave() {
 async function saveData() {
   if (!S.cfg || !S.user) return;
   S.saving = true;
-  setStatus('saving', '💾 Saving your picks…');
+  setStatus('saving', '💾 Saving…');
   try {
-    // Fetch latest, apply our local state on top
-    let base = S.data;
-    try {
-      const r = await fetch(`https://api.jsonbin.io/v3/b/${S.cfg.binId}/latest`,
-        { headers: { 'X-Master-Key': S.cfg.apiKey } });
-      if (r.ok) base = validData((await r.json()).record);
-    } catch {}
-
-    // Merge: keep server state, overwrite slots that belong to current user in local state
-    const merged = deepClone(base);
-    for (const [dk, slots] of Object.entries(S.data.availability || {})) {
-      for (const [sk, players] of Object.entries(slots)) {
-        if (!merged.availability[dk]) merged.availability[dk] = {};
-        // Replace this slot's value (our local state is source of truth for all players in view)
-        merged.availability[dk][sk] = players;
-      }
-    }
-
     const res = await fetch(`https://api.jsonbin.io/v3/b/${S.cfg.binId}`, {
       method:  'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': S.cfg.apiKey },
-      body:    JSON.stringify(merged),
+      body:    JSON.stringify(S.data),
     });
     if (!res.ok) throw new Error(res.status);
-    S.data = merged;
-    renderGrid();
-    updateBadge();
+    localStorage.setItem('padelData', JSON.stringify(S.data));
     setStatus('saved', '✅ Saved! See you on court 🎾');
   } catch {
     setStatus('error', '❌ Save failed — try refreshing.');
