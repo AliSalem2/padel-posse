@@ -268,6 +268,33 @@
     }
     .toast.show { opacity: 1; }
 
+    /* ── GAME-ON ALERT ─────────────────────────────── */
+    .gameon-alert {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(.85);
+      background: linear-gradient(135deg, #0c3320, #16a34a);
+      color: #fff;
+      padding: 22px 28px;
+      border-radius: 20px;
+      font-size: 1rem; font-weight: 700;
+      text-align: center;
+      z-index: 500;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+      transition: opacity .25s, transform .25s;
+      max-width: 320px; width: 90%;
+      line-height: 1.45;
+    }
+    .gameon-alert.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .gameon-big { font-size: 2rem; display: block; margin-bottom: 6px; }
+    .gameon-title { font-size: 1.15rem; letter-spacing: .5px; text-transform: uppercase; }
+    .gameon-detail { font-size: .82rem; opacity: .85; margin-top: 4px; }
+
     /* ── LOADING ───────────────────────────────────── */
     .loading {
       display: flex; align-items: center; justify-content: center;
@@ -406,6 +433,22 @@
       <input id="s-bin" class="form-inp mono" type="text" placeholder="67f3a8c…" />
     </div>
 
+    <div class="setup-step" style="margin-bottom:12px">
+      <div class="step-hdr">
+        <div class="step-num">3</div>
+        <div class="step-title">Organiser alerts via ntfy <span style="font-weight:400;opacity:.6">(optional)</span></div>
+      </div>
+      <div class="step-body">
+        Install the free <strong>ntfy</strong> app on your phone →
+        subscribe to any secret topic you invent, e.g. <code>padel-berlin-xyz42</code>.
+        Paste the same topic below — you'll get a push when 4 players lock in a slot.
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-lbl" for="s-ntfy">🔔 ntfy topic <span style="font-weight:400;color:var(--gray400)">(organiser only)</span></label>
+      <input id="s-ntfy" class="form-inp mono" type="text" placeholder="padel-berlin-xyz42" maxlength="64" autocomplete="off" />
+    </div>
+
     <button class="btn-go" onclick="submitSetup()">🚀 Let's Play!</button>
     <div class="setup-err" id="setup-err"></div>
   </div>
@@ -413,6 +456,13 @@
 
 <!-- ════════ TOAST ════════ -->
 <div id="toast" class="toast">👆 Enter your name first, champ!</div>
+
+<!-- ════════ GAME-ON ALERT ════════ -->
+<div id="gameon-alert" class="gameon-alert">
+  <span class="gameon-big">🎾</span>
+  <div class="gameon-title">GAME ON!</div>
+  <div class="gameon-detail" id="gameon-detail">4 players locked in!</div>
+</div>
 
 <!-- ════════ APP ════════ -->
 <header class="app-header">
@@ -452,6 +502,7 @@ const HARDCODED_CFG = {
   groupName: 'Padel Crew Berlin Cal 1.0',          // 👈 your group name
   apiKey:    '$2a$10$8u2fTCYAdWZvSh6TL8V42Ox/Q9Evagy3lReOjpV.E1KcbJJjYvmuW', // 👈 paste your JSONBin Secret Key
   binId:     '69f5e19d856a68218999d28a',     // 👈 paste your Bin ID
+  ntfyTopic: 'padel-berlin-stars22',         // 👈 your ntfy topic (organiser only)
 };
 // ═══════════════════════════════════════════════════
 //  CONSTANTS
@@ -459,6 +510,8 @@ const HARDCODED_CFG = {
 const SLOT_META = {
   s0810: { ico: '🌅', name: '8–10',   time: '8:00 – 10:00' },
   s1012: { ico: '🌤️', name: '10–12',  time: '10:00 – 12:00' },
+  s1214: { ico: '🌞', name: '12–14',  time: '12:00 – 14:00' },
+  s1416: { ico: '⛅', name: '14–16',  time: '14:00 – 16:00' },
   s1618: { ico: '☀️',  name: '16–18',  time: '16:00 – 18:00' },
   s1820: { ico: '🌆', name: '18–20',  time: '18:00 – 20:00' },
   s2022: { ico: '🌙', name: '20–22',  time: '20:00 – 22:00' },
@@ -483,6 +536,7 @@ const S = {
   weekOffset: 0,
   saveTimer: null,
   saving: false,
+  notified: new Set(), // slot keys already alerted this session
 };
 
 // ═══════════════════════════════════════════════════
@@ -519,6 +573,12 @@ function init() {
     document.getElementById('group-name').textContent = S.cfg.groupName;
     document.title = S.cfg.groupName + ' 🏓';
   }
+
+  // Restore previously seen game-on alerts so they don't re-fire on reload
+  try {
+    const saved = JSON.parse(localStorage.getItem('padelNotified') || '[]');
+    saved.forEach(k => S.notified.add(k));
+  } catch {}
 
   // Show setup only if credentials are still missing (file not yet configured)
   if (!S.cfg?.apiKey || !S.cfg?.binId) {
@@ -578,9 +638,10 @@ function showSetup() {
   const bd = document.getElementById('backdrop');
   bd.classList.remove('hidden');
   if (S.cfg) {
-    document.getElementById('s-group').value = S.cfg.groupName || '';
-    document.getElementById('s-key').value   = S.cfg.apiKey   || '';
-    document.getElementById('s-bin').value   = S.cfg.binId    || '';
+    document.getElementById('s-group').value = S.cfg.groupName  || '';
+    document.getElementById('s-key').value   = S.cfg.apiKey     || '';
+    document.getElementById('s-bin').value   = S.cfg.binId      || '';
+    document.getElementById('s-ntfy').value  = S.cfg.ntfyTopic  || '';
   }
 }
 
@@ -616,7 +677,8 @@ async function submitSetup() {
     return;
   }
 
-  S.cfg = { groupName, apiKey, binId };
+  const ntfyTopic = document.getElementById('s-ntfy').value.trim();
+  S.cfg = { groupName, apiKey, binId, ntfyTopic };
   localStorage.setItem('padelCfg', JSON.stringify(S.cfg));
   document.getElementById('group-name').textContent = groupName;
   document.title = groupName + ' 🏓';
@@ -664,7 +726,7 @@ function isPast(d) {
 }
 
 function slotsFor(d) {
-  return ['s0810','s1012','s1618','s1820','s2022'];
+  return ['s0810','s1012','s1214','s1416','s1618','s1820','s2022'];
 }
 
 // ═══════════════════════════════════════════════════
@@ -684,11 +746,32 @@ async function fetchData(showIndicator) {
     if (!res.ok) throw new Error(res.status);
     S.data = validData((await res.json()).record);
     localStorage.setItem('padelData', JSON.stringify(S.data));
+    checkGameOnAlerts();
     renderGrid();
     updateBadge();
     if (showIndicator) setStatus('saved', '✅ Up to date!');
   } catch (e) {
     if (showIndicator) setStatus('error', `❌ Refresh failed — check your connection.`);
+  }
+}
+
+function checkGameOnAlerts() {
+  const av = S.data.availability || {};
+  let firstNew = null;
+  for (const [dk, slots] of Object.entries(av)) {
+    for (const [sk, players] of Object.entries(slots)) {
+      if (players.length >= 4) {
+        const key = dk + '_' + sk;
+        if (!S.notified.has(key)) {
+          S.notified.add(key);
+          if (!firstNew) firstNew = { dk, sk, count: players.length };
+        }
+      }
+    }
+  }
+  if (firstNew) {
+    localStorage.setItem('padelNotified', JSON.stringify([...S.notified]));
+    showGameOn(firstNew.dk, firstNew.sk, firstNew.count);
   }
 }
 
@@ -730,6 +813,13 @@ function toggleSlot(dk, sk) {
   const arr = av[dk][sk];
   const idx = arr.indexOf(S.user);
   if (idx === -1) arr.push(S.user); else arr.splice(idx, 1);
+  // Alert when this slot hits exactly 4 (you're the deciding vote)
+  if (arr.length === 4) {
+    const key = dk + '_' + sk;
+    S.notified.add(key);
+    localStorage.setItem('padelNotified', JSON.stringify([...S.notified]));
+    showGameOn(dk, sk, arr.length);
+  }
   renderGrid();
   updateBadge();
   scheduleSave();
@@ -850,6 +940,36 @@ function setStatus(type, msg) {
       el.textContent = 'Ready to smash! 🏓';
     }, 3500);
   }
+}
+
+let _gameonTimer = null;
+function showGameOn(dk, sk, count) {
+  const meta = SLOT_META[sk];
+  const date = new Date(dk + 'T12:00:00');
+  const label = `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} · ${meta.time}`;
+  document.getElementById('gameon-detail').textContent =
+    `${count} players ready for ${label}`;
+  const el = document.getElementById('gameon-alert');
+  el.classList.add('show');
+  if (_gameonTimer) clearTimeout(_gameonTimer);
+  _gameonTimer = setTimeout(() => el.classList.remove('show'), 4000);
+  sendNtfy(label, count);
+}
+
+async function sendNtfy(label, count) {
+  const topic = S.cfg?.ntfyTopic?.trim();
+  if (!topic) return;
+  try {
+    await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+      method: 'POST',
+      headers: {
+        'Title':    `🎾 Game On! — ${S.cfg.groupName || 'Padel'}`,
+        'Priority': 'high',
+        'Tags':     'tennis,tada',
+      },
+      body: `${count} players locked in for ${label} — time to book the court!`,
+    });
+  } catch {}
 }
 
 let _toastTimer = null;
