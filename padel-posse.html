@@ -711,12 +711,7 @@ function weekDays(offset) {
   });
 }
 
-function dStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+function dStr(d) { return d.toISOString().split('T')[0]; }
 
 function isToday(d) {
   const n = new Date(); n.setHours(0,0,0,0);
@@ -947,11 +942,23 @@ function setStatus(type, msg) {
   }
 }
 
+// Find the actual local Date object whose UTC ISO string matches dk
+function dayFromKey(dk) {
+  for (let off = -1; off <= 4; off++) {
+    for (const d of weekDays(off)) {
+      if (dStr(d) === dk) return d;
+    }
+  }
+  return null;
+}
+
 let _gameonTimer = null;
 function showGameOn(dk, sk, count) {
   const meta = SLOT_META[sk];
-  const date = new Date(dk + 'T12:00:00');
-  const label = `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} · ${meta.time}`;
+  const date = dayFromKey(dk);
+  const label = date
+    ? `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} · ${meta.time}`
+    : `${dk} · ${meta.time}`;
   document.getElementById('gameon-detail').textContent =
     `${count} players ready for ${label}`;
   const el = document.getElementById('gameon-alert');
