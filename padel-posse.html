@@ -584,14 +584,17 @@ function init() {
   if (!S.cfg?.apiKey || !S.cfg?.binId) {
     showSetup();
   } else {
-    // Load from cache instantly, then quietly sync from server in background
     const cached = localStorage.getItem('padelData');
     if (cached) {
+      // Returning user — show cached data instantly, then sync quietly
       try { S.data = JSON.parse(cached); } catch {}
+      renderGrid();
+      updateBadge();
+      fetchData(false);
+    } else {
+      // First visit — wait for real data before rendering so votes are visible immediately
+      fetchData(true);
     }
-    renderGrid();
-    updateBadge();
-    fetchData(false); // background sync, no spinner
   }
 
   // Auto-refresh every 60 s
