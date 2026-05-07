@@ -374,6 +374,24 @@
       transition: opacity .15s;
     }
     .btn-go:hover { opacity: .9; }
+    .btn-test-ntfy {
+      margin-top: 8px;
+      background: none;
+      border: 1.5px solid var(--g600);
+      color: var(--g700);
+      border-radius: var(--rMd);
+      padding: 7px 14px;
+      font-size: .82rem; font-weight: 700;
+      cursor: pointer; width: 100%;
+      transition: background .15s, color .15s;
+    }
+    .btn-test-ntfy:hover { background: var(--g100); }
+    .ntfy-test-result {
+      margin-top: 6px;
+      font-size: .8rem;
+      min-height: 1.2em;
+      text-align: center;
+    }
 
     .setup-err {
       background: #fee2e2; color: var(--r500);
@@ -447,6 +465,8 @@
     <div class="form-group">
       <label class="form-lbl" for="s-ntfy">🔔 ntfy topic <span style="font-weight:400;color:var(--gray400)">(organiser only)</span></label>
       <input id="s-ntfy" class="form-inp mono" type="text" placeholder="padel-berlin-xyz42" maxlength="64" autocomplete="off" />
+      <button class="btn-test-ntfy" id="btn-test-ntfy" type="button" onclick="testNtfy()">🔔 Test Notification</button>
+      <div class="ntfy-test-result" id="ntfy-test-result"></div>
     </div>
 
     <button class="btn-go" onclick="submitSetup()">🚀 Let's Play!</button>
@@ -981,6 +1001,38 @@ function showGameOn(dk, sk, count) {
   if (_gameonTimer) clearTimeout(_gameonTimer);
   _gameonTimer = setTimeout(() => el.classList.remove('show'), 4000);
   sendNtfy(label, count);
+}
+
+async function testNtfy() {
+  const topic = document.getElementById('s-ntfy').value.trim();
+  const resultEl = document.getElementById('ntfy-test-result');
+  const btn = document.getElementById('btn-test-ntfy');
+  if (!topic) {
+    resultEl.style.color = 'var(--r500)';
+    resultEl.textContent = '⚠️ Enter a topic first.';
+    return;
+  }
+  btn.disabled = true;
+  resultEl.style.color = 'var(--gray400)';
+  resultEl.textContent = 'Sending…';
+  try {
+    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+      method: 'POST',
+      headers: { 'Title': '🎾 Padel Posse — Test', 'Priority': 'default', 'Tags': 'tennis' },
+      body: 'If you see this, notifications are working!',
+    });
+    if (res.ok) {
+      resultEl.style.color = 'var(--g700)';
+      resultEl.textContent = '✅ Sent! Check your phone.';
+    } else {
+      resultEl.style.color = 'var(--r500)';
+      resultEl.textContent = `❌ Failed (${res.status}) — check the topic name.`;
+    }
+  } catch {
+    resultEl.style.color = 'var(--r500)';
+    resultEl.textContent = '❌ Network error — check your connection.';
+  }
+  btn.disabled = false;
 }
 
 async function sendNtfy(label, count) {
