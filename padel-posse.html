@@ -761,19 +761,27 @@ async function fetchData(showIndicator) {
 function checkGameOnAlerts() {
   const av = S.data.availability || {};
   let firstNew = null;
+  let changed = false;
   for (const [dk, slots] of Object.entries(av)) {
     for (const [sk, players] of Object.entries(slots)) {
+      const key = dk + '_' + sk;
       if (players.length >= 4) {
-        const key = dk + '_' + sk;
         if (!S.notified.has(key)) {
           S.notified.add(key);
+          changed = true;
           if (!firstNew) firstNew = { dk, sk, count: players.length };
         }
+      } else if (players.length < 4 && S.notified.has(key)) {
+        // Slot fell below 4 — allow re-notification when it hits 4 again
+        S.notified.delete(key);
+        changed = true;
       }
     }
   }
-  if (firstNew) {
+  if (changed) {
     localStorage.setItem('padelNotified', JSON.stringify([...S.notified]));
+  }
+  if (firstNew) {
     showGameOn(firstNew.dk, firstNew.sk, firstNew.count);
   }
 }
@@ -816,12 +824,16 @@ function toggleSlot(dk, sk) {
   const arr = av[dk][sk];
   const idx = arr.indexOf(S.user);
   if (idx === -1) arr.push(S.user); else arr.splice(idx, 1);
-  // Alert when this slot hits exactly 4 (you're the deciding vote)
+  const key = dk + '_' + sk;
   if (arr.length === 4) {
-    const key = dk + '_' + sk;
+    // Alert when this slot hits exactly 4 (you're the deciding vote)
     S.notified.add(key);
     localStorage.setItem('padelNotified', JSON.stringify([...S.notified]));
     showGameOn(dk, sk, arr.length);
+  } else if (arr.length === 3) {
+    // Slot dropped below 4 — reset so the next time it hits 4 it fires again
+    S.notified.delete(key);
+    localStorage.setItem('padelNotified', JSON.stringify([...S.notified]));
   }
   renderGrid();
   updateBadge();
