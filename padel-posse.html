@@ -1016,11 +1016,10 @@ async function testNtfy() {
   resultEl.style.color = 'var(--gray400)';
   resultEl.textContent = 'Sending…';
   try {
-    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
-      method: 'POST',
-      headers: { 'Title': '🎾 Padel Posse — Test', 'Priority': 'default', 'Tags': 'tennis' },
-      body: 'If you see this, notifications are working!',
-    });
+    const res = await fetch(
+      `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent('🎾 Padel Posse — Test')}&priority=default&tags=tennis`,
+      { method: 'POST', body: 'If you see this, notifications are working!' }
+    );
     if (res.ok) {
       resultEl.style.color = 'var(--g700)';
       resultEl.textContent = '✅ Sent! Check your phone.';
@@ -1039,15 +1038,10 @@ async function sendNtfy(label, count) {
   const topic = S.cfg?.ntfyTopic?.trim();
   if (!topic) return;
   try {
-    await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
-      method: 'POST',
-      headers: {
-        'Title':    `🎾 Game On! — ${S.cfg.groupName || 'Padel'}`,
-        'Priority': 'high',
-        'Tags':     'tennis,tada',
-      },
-      body: `${count} players locked in for ${label} — time to book the court!`,
-    });
+    await fetch(
+      `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent(`🎾 Game On! — ${S.cfg.groupName || 'Padel'}`)}&priority=high&tags=tennis%2Ctada`,
+      { method: 'POST', body: `${count} players locked in for ${label} — time to book the court!` }
+    );
   } catch {}
 }
 
