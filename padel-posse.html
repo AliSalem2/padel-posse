@@ -196,14 +196,15 @@
 
     .slot-chips { display: flex; flex-wrap: wrap; gap: 3px; min-height: 18px; }
     .chip {
-      width: 22px; height: 22px;
-      border-radius: 50%;
+      height: 22px;
+      border-radius: 20px;
+      padding: 0 7px;
       color: #fff;
-      font-size: .58rem; font-weight: 800;
+      font-size: .65rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      text-transform: uppercase;
       cursor: default;
       position: relative;
+      white-space: nowrap;
     }
     /* Tooltip on hover (desktop) */
     .chip::after {
@@ -916,7 +917,7 @@ function renderGrid() {
       // Chips
       const chips = players.map(p => {
         const color = avatarColor(p);
-        return `<div class="chip" style="background:${color}" data-name="${p}">${p.charAt(0).toUpperCase()}</div>`;
+        return `<div class="chip" style="background:${color}" data-name="${p}">${p}</div>`;
       }).join('');
 
       btn.innerHTML = `
